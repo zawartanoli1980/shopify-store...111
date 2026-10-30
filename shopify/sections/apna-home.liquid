@@ -1,0 +1,119 @@
+{{ 'apna-store.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'apna-store.js' | asset_url }}" defer="defer"></script>
+
+<section class="apna apna-home" data-apna-home data-section-id="{{ section.id }}" data-cart-add-url="{{ routes.cart_add_url }}" data-cart-url="{{ routes.cart_url }}" data-currency="{{ cart.currency.iso_code | escape }}" data-locale="{{ request.locale.iso_code | escape }}">
+  <div class="apna-shell">
+    <div class="apna-hero" aria-roledescription="carousel" aria-label="Featured collections">
+      {% assign slide_count = 0 %}
+      {% for block in section.blocks %}
+        {% if block.type == 'slide' %}
+          <article class="apna-slide" data-apna-slide {% if slide_count > 0 %}hidden{% endif %} {{ block.shopify_attributes }} aria-roledescription="slide" aria-label="{{ slide_count | plus: 1 }}">
+            <div class="apna-hero-copy">
+              <span class="apna-eyebrow">{{ block.settings.eyebrow | escape }}</span>
+              {% if slide_count == 0 %}<h1>{{ block.settings.heading | escape }}</h1>{% else %}<h2>{{ block.settings.heading | escape }}</h2>{% endif %}
+              <p>{{ block.settings.text | escape }}</p>
+              {% if block.settings.url != blank %}<a class="apna-button" href="{{ block.settings.url }}">{{ block.settings.cta | escape }} <span aria-hidden="true">↗</span></a>{% endif %}
+            </div>
+            <div class="apna-hero-media">
+              {% if block.settings.image != blank %}
+                {% if slide_count == 0 %}{{ block.settings.image | image_url: width: 1600 | image_tag: widths: '400, 600, 900, 1200, 1600', sizes: '(min-width: 900px) 50vw, 100vw', loading: 'eager', fetchpriority: 'high', class: 'apna-hero-image' }}{% else %}{{ block.settings.image | image_url: width: 1200 | image_tag: widths: '400, 600, 900, 1200', sizes: '(min-width: 900px) 50vw, 100vw', loading: 'lazy', class: 'apna-hero-image' }}{% endif %}
+              {% else %}
+                {% render 'apna-hero-art', artwork_id: block.id %}
+              {% endif %}
+            </div>
+          </article>
+          {% assign slide_count = slide_count | plus: 1 %}
+        {% endif %}
+      {% endfor %}
+      {% if slide_count > 1 %}
+        <div class="apna-slide-controls"><button type="button" data-apna-prev aria-label="Previous featured collection">←</button><span data-apna-slide-status aria-live="polite">1 / {{ slide_count }}</span><button type="button" data-apna-next aria-label="Next featured collection">→</button></div>
+      {% endif %}
+    </div>
+
+    <div class="apna-benefits">
+      {% for block in section.blocks %}
+        {% if block.type == 'benefit' %}
+          <div {{ block.shopify_attributes }}><span class="apna-benefit-icon" aria-hidden="true">{{ block.settings.symbol | escape }}</span><div><strong>{{ block.settings.title | escape }}</strong><p>{{ block.settings.text | escape }}</p>{% if block.settings.url != blank %}<a href="{{ block.settings.url }}">View details</a>{% endif %}</div></div>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <div class="apna-section-heading"><div><span class="apna-eyebrow">A little of everything. Chosen for you.</span><h2>Find your everyday favourites</h2></div><a href="{{ routes.collections_url }}">Explore all collections ↗</a></div>
+    <div class="apna-categories">
+      {% for block in section.blocks %}
+        {% if block.type == 'category' %}
+          {% assign category = block.settings.collection %}
+          <a class="apna-category" href="{{ category.url | default: routes.collections_url }}" {{ block.shopify_attributes }}>
+            {% assign category_image = block.settings.image | default: category.featured_image %}
+            {% if category_image != blank %}{{ category_image | image_url: width: 400 | image_tag: widths: '160, 240, 400', sizes: '(min-width: 900px) 14vw, 40vw', loading: 'lazy' }}{% else %}<span class="apna-category-placeholder" aria-hidden="true">{{ block.settings.symbol | escape }}</span>{% endif %}
+            <span>{{ block.settings.title | default: category.title | escape }} <span aria-hidden="true">↗</span></span>
+          </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    {% assign featured = section.settings.collection %}
+    <div class="apna-section-heading"><div><span class="apna-eyebrow">The good finds</span><h2>{{ section.settings.products_heading | escape }}</h2></div>{% if featured != blank %}<a href="{{ featured.url }}">Shop the collection ↗</a>{% endif %}</div>
+    <div class="apna-products">
+      {% for product in featured.products limit: section.settings.product_limit %}
+        {% assign card_variant = product.selected_or_first_available_variant %}
+        <article class="apna-product">
+          <div class="apna-product-media">
+            <a href="{{ product.url }}" tabindex="-1" aria-hidden="true">{% if product.featured_image %}{{ product.featured_image | image_url: width: 700 | image_tag: widths: '240, 400, 550, 700', sizes: '(min-width: 1000px) 23vw, 46vw', loading: 'lazy', alt: product.featured_image.alt }}{% else %}{{ 'product-1' | placeholder_svg_tag: 'apna-placeholder' }}{% endif %}</a>
+            {% if product.available == false %}<span class="apna-product-badge">Sold out</span>{% elsif product.price_varies == false and card_variant.compare_at_price > card_variant.price %}<span class="apna-product-badge">Sale</span>{% endif %}
+            {% unless product.requires_selling_plan or product.tags contains 'product-page-only' %}<button hidden type="button" class="apna-quick" data-apna-quick-view data-product-url="{{ product.url }}" aria-label="Quick view: {{ product.title | escape }}">Quick view <span aria-hidden="true">+</span></button>{% endunless %}
+          </div>
+          <p class="apna-product-type">{{ product.type | escape }}</p>
+          <h3><a href="{{ product.url }}">{{ product.title | escape }}</a></h3>
+          <p class="apna-price">{% if product.price_varies %}From {% endif %}{{ product.price | money_with_currency }}{% if product.price_varies == false and card_variant.compare_at_price > card_variant.price %} <s>{{ card_variant.compare_at_price | money_with_currency }}</s>{% endif %}</p>
+        </article>
+      {% else %}
+        {% if request.design_mode %}<p class="apna-empty">Choose a published collection in this section’s settings. No sample products or reviews will be shown to customers.</p>{% endif %}
+      {% endfor %}
+    </div>
+
+    <aside class="apna-editorial"><div><span class="apna-eyebrow">Apna Saman · اپنا سامان</span><h2>Little upgrades.<br>Better everydays.</h2><p>A considered collection for your home, your routine, and everything in between.</p>{% if section.settings.editorial_link != blank %}<a class="apna-button apna-button-light" href="{{ section.settings.editorial_link }}">Discover the edit ↗</a>{% endif %}</div><span class="apna-editorial-art" aria-hidden="true">a<span>اپنا</span></span></aside>
+  </div>
+
+  <dialog class="apna apna-dialog" data-apna-dialog aria-labelledby="ApnaQuickTitle-{{ section.id }}">
+    <button class="apna-dialog-close" type="button" data-apna-close aria-label="Close quick view">×</button>
+    <div data-apna-quick-content></div>
+    <p class="apna-feedback" data-apna-feedback role="status" aria-live="polite"></p>
+  </dialog>
+  <p class="apna-sr-only" data-apna-status role="status" aria-live="polite"></p>
+</section>
+
+{% schema %}
+{
+  "name": "Apna Saman homepage",
+  "settings": [
+    {"type":"collection","id":"collection","label":"Featured products collection"},
+    {"type":"text","id":"products_heading","label":"Products heading","default":"Worth adding to your everyday"},
+    {"type":"range","id":"product_limit","label":"Products to display","min":4,"max":12,"step":4,"default":8},
+    {"type":"url","id":"editorial_link","label":"Editorial collection link"}
+  ],
+  "blocks": [
+    {"type":"slide","name":"Hero slide","limit":3,"settings":[
+      {"type":"text","id":"eyebrow","label":"Eyebrow","default":"Good things. All in one place."},
+      {"type":"text","id":"heading","label":"Heading","default":"Everyday finds. Extraordinary living."},
+      {"type":"text","id":"text","label":"Description","default":"Discover thoughtful essentials and little upgrades for a life well lived."},
+      {"type":"image_picker","id":"image","label":"Hero image"},
+      {"type":"text","id":"cta","label":"Button label","default":"Explore the collection"},
+      {"type":"url","id":"url","label":"Button link"}
+    ]},
+    {"type":"category","name":"Department","limit":7,"settings":[
+      {"type":"collection","id":"collection","label":"Collection"},
+      {"type":"text","id":"title","label":"Display title"},
+      {"type":"image_picker","id":"image","label":"Image override"},
+      {"type":"text","id":"symbol","label":"Fallback initial","default":"A"}
+    ]},
+    {"type":"benefit","name":"Verified store benefit","limit":3,"settings":[
+      {"type":"text","id":"symbol","label":"Symbol","default":"✓"},
+      {"type":"text","id":"title","label":"Verified benefit title","default":"Here to help"},
+      {"type":"text","id":"text","label":"Policy summary","default":"Contact us with your questions."},
+      {"type":"url","id":"url","label":"Policy or contact link"}
+    ]}
+  ],
+  "presets": [{"name":"Apna Saman homepage","blocks":[{"type":"slide"},{"type":"category","settings":{"title":"Electronics & Gadgets","symbol":"E"}},{"type":"category","settings":{"title":"Home & Kitchen","symbol":"H"}},{"type":"category","settings":{"title":"Fashion & Accessories","symbol":"F"}},{"type":"category","settings":{"title":"Beauty & Personal Care","symbol":"B"}},{"type":"category","settings":{"title":"Fitness & Outdoors","symbol":"O"}},{"type":"category","settings":{"title":"Kids & Play","symbol":"K"}},{"type":"category","settings":{"title":"Everyday & Travel","symbol":"T"}}]}]
+}
+{% endschema %}

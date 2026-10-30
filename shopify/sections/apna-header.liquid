@@ -1,0 +1,35 @@
+{{ 'apna-store.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'apna-store.js' | asset_url }}" defer="defer"></script>
+<header class="apna apna-header" data-apna-header>
+  {% if section.settings.announcement != blank %}<div class="apna-announcement">{{ section.settings.announcement | escape }}</div>{% endif %}
+  <div class="apna-shell apna-header-main">
+    <a class="apna-wordmark" href="{{ routes.root_url }}" aria-label="Apna Saman home"><span class="apna-logo-mark" aria-hidden="true">a.</span><span>apna saman<small lang="ur" dir="rtl">اپنا سامان</small></span></a>
+    <div class="apna-search-wrap" data-apna-search data-predictive-url="{{ routes.predictive_search_url }}.json">
+      <form action="{{ routes.search_url }}" method="get" role="search" class="apna-search-form">
+        <label class="apna-sr-only" for="ApnaSearch-{{ section.id }}">Search products</label>
+        <input id="ApnaSearch-{{ section.id }}" type="search" name="q" placeholder="What are you looking for today?" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="ApnaResults-{{ section.id }}">
+        <input type="hidden" name="type" value="product"><button type="submit" aria-label="Submit search">⌕</button>
+      </form>
+      <ul id="ApnaResults-{{ section.id }}" class="apna-search-results" role="listbox" aria-label="Suggested products" hidden></ul>
+      <span class="apna-sr-only" role="status" aria-live="polite" data-apna-search-status></span>
+    </div>
+    <a class="apna-bag" href="{{ routes.cart_url }}">Bag <span data-apna-cart-count>{{ cart.item_count }}</span></a>
+  </div>
+  <div class="apna-shell">
+    <nav class="apna-nav" aria-label="Main navigation">
+      <button type="button" class="apna-mobile-toggle" data-apna-menu-toggle aria-controls="ApnaMenu-{{ section.id }}" aria-expanded="false">Browse departments <span aria-hidden="true">☰</span></button>
+      <ul id="ApnaMenu-{{ section.id }}" class="apna-menu" data-apna-menu>
+        {% for link in section.settings.menu.links %}
+          <li>
+            {% if link.links != blank %}
+              <details class="apna-mega"><summary>{{ link.title | escape }} <span aria-hidden="true">⌄</span></summary><div class="apna-mega-panel"><a class="apna-mega-all" href="{{ link.url }}">Shop all {{ link.title | escape }} ↗</a><div class="apna-mega-columns">{% for child in link.links %}<div><a class="apna-mega-title" href="{{ child.url }}">{{ child.title | escape }}</a>{% if child.links != blank %}<ul>{% for grandchild in child.links %}<li><a href="{{ grandchild.url }}">{{ grandchild.title | escape }}</a></li>{% endfor %}</ul>{% endif %}</div>{% endfor %}</div></div></details>
+            {% else %}<a href="{{ link.url }}"{% if link.current %} aria-current="page"{% endif %}>{{ link.title | escape }}</a>{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </nav>
+  </div>
+</header>
+{% schema %}
+{"name":"Apna Saman header","settings":[{"type":"text","id":"announcement","label":"Verified announcement (optional)"},{"type":"link_list","id":"menu","label":"Main navigation menu","default":"main-menu"}],"presets":[{"name":"Apna Saman header"}]}
+{% endschema %}
